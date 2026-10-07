@@ -1208,7 +1208,8 @@ function setMusicButtonState() {
   const label = musicToggle.querySelector('.music-toggle__label');
   musicToggle.classList.toggle('is-muted', !musicState.enabled);
   musicToggle.setAttribute('aria-pressed', String(musicState.enabled));
-  if (label) label.textContent = musicState.enabled ? 'Music' : 'Muted';
+  musicToggle.setAttribute('aria-label', musicState.enabled ? 'Mute background music' : 'Unmute background music');
+  if (label) label.textContent = musicState.enabled ? 'Mute' : 'Unmute';
 }
 
 function ensureMusicContext() {
@@ -1279,7 +1280,9 @@ function playTemplePhrase() {
 function startAmbientMusic() {
   const ctx = ensureMusicContext();
   if (!ctx || !musicState.enabled) return;
-  ctx.resume();
+  ctx.resume().catch(error => {
+    if (error.name !== 'NotAllowedError') console.error('Unable to resume background music:', error);
+  });
   musicState.master.gain.cancelScheduledValues(ctx.currentTime);
   musicState.master.gain.setTargetAtTime(0.72, ctx.currentTime, 0.8);
   if (!musicState.started) {
@@ -1340,14 +1343,8 @@ if (musicToggle) {
     event.stopPropagation();
     toggleAmbientMusic();
   });
+  startAmbientMusic();
 }
-
-document.addEventListener('pointerdown', (event) => {
-  if (!musicState.started && !event.target.closest('.music-toggle')) {
-    musicState.enabled = true;
-    startAmbientMusic();
-  }
-}, { once: true });
 
 /* A missing local Three.js file should leave a usable static portfolio. */
 if (!window.THREE) {
